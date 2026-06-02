@@ -2,7 +2,7 @@
 # 🚀 ArgoCD GitOps Deployment – Microservices Project
 
 ## 📌 Project Overview
-## Please follow above present .txt file to get the execution steps 
+## Please follow above present .txt file inside my-project folder to get the execution steps 
 
 This project demonstrates **GitOps-based deployment using ArgoCD** on a Kubernetes cluster (Kind).
 It includes a **microservices-based tax-price calculation system** with frontend and backend services.
