@@ -1,0 +1,308 @@
+ArgoCD Setup::-
+======================
+You can do these setup in AWS EC2 instance having ubuntu machine which t2.large.It is cost affect means charges
+
+But in my local laptop i am using Docker Desktop.During inatsllation of docker desktop in my laptop locally, WSL ubuntu came came becoz docker will run inside wsl.
+So i am thinking why should i go for EC2, already in my laptop WSL ubuntu is there lets practice here...
+
+So in wsl ubuntu, docker is there..only require kind cluster,kubectl,argocd to install whic takes 5-6 gb RAM size.
+
+Let's install...
+niran@NIRANJAN-LAP:~$ docker --version
+Docker version 29.2.0, build 0b9d198
+niran@NIRANJAN-LAP:~$ [ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.31.0/kind-linux-amd64
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    97  100    97    0     0    490      0 --:--:-- --:--:-- --:--:--   492
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100 10.5M  100 10.5M    0     0  6930k      0  0:00:01  0:00:01 --:--:-- 12.9M
+niran@NIRANJAN-LAP:~$ chmod +x ./kind
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ sudo mv ./kind /usr/local/bin/kind
+[sudo] password for niran:
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kind version
+kind v0.31.0 go1.25.5 linux/amd64
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 56.7M  100 56.7M    0     0  13.2M      0  0:00:04  0:00:04 --:--:-- 13.2M
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl version --client
+Client Version: v1.36.1
+Kustomize Version: v5.8.1
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ ls
+'New folder'    app.log   hardlink-file   kubectl        myfile.txt    namaste.txt   nohup.out   softlink-file
+'New folder2'   cloud     java.png        linux_devops   myfile2.txt   newfile.txt   sisu.txt
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ chmod 700 get_helm.sh
+niran@NIRANJAN-LAP:~$ ./get_helm.sh
+Downloading https://get.helm.sh/helm-v4.2.0-linux-amd64.tar.gz
+Verifying checksum... Done.
+Preparing to install helm into /usr/local/bin
+helm installed into /usr/local/bin/helm
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$
+
+niran@NIRANJAN-LAP:~$ vim kind-config.yaml
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ cat kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.33.1
+  - role: worker
+    image: kindest/node:v1.33.1
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kind create cluster --name argocd-cluster --config kind-config.yaml
+Creating cluster "argocd-cluster" ...
+ ✓ Ensuring node image (kindest/node:v1.33.1) 🖼
+ ✓ Preparing nodes 📦 📦
+ ✓ Writing configuration 📜
+ ✓ Starting control-plane 🕹️
+ ✓ Installing CNI 🔌
+ ✓ Installing StorageClass 💾
+ ✓ Joining worker nodes 🚜
+Set kubectl context to "kind-argocd-cluster"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-argocd-cluster
+
+Not sure what to do next? 😅  Check out https://kind.sigs.k8s.io/docs/user/quick-start/
+niran@NIRANJAN-LAP:~$
+
+niran@NIRANJAN-LAP:~$ helm repo add argo https://argoproj.github.io/argo-helm
+"argo" has been added to your repositories
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ helm repo update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "argo" chart repository
+Update Complete. ⎈Happy Helming!⎈
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl create namespace argocd
+namespace/argocd created
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ helm install argocd argo/argo-cd -n argocd
+
+NAME: argocd
+LAST DEPLOYED: Tue Jun  2 05:53:20 2026
+NAMESPACE: argocd
+STATUS: deployed
+REVISION: 1
+DESCRIPTION: Install complete
+TEST SUITE: None
+NOTES:
+In order to access the server UI you have the following options:
+
+1. kubectl port-forward service/argocd-server -n argocd 8080:443
+
+    and then open the browser on http://localhost:8080 and accept the certificate
+
+2. enable ingress in the values file `server.ingress.enabled` and either
+      - Add the annotation for ssl passthrough: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-1-ssl-passthrough
+      - Set the `configs.params."server.insecure"` in the values file and terminate SSL at your ingress: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-2-multiple-ingress-objects-and-hosts
+
+
+After reaching the UI the first time you can login with username: admin and the random password generated during the installation. You can find the password by running:
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+(You should delete the initial secret afterwards as suggested by the Getting Started Guide: https://argo-cd.readthedocs.io/en/stable/getting_started/#4-login-using-the-cli)
+niran@NIRANJAN-LAP:~$
+
+=>To check argocd is running or not inside cluster...
+niran@NIRANJAN-LAP:~$ kubectl get all -n argocd
+NAME                                                    READY   STATUS    RESTARTS   AGE
+pod/argocd-application-controller-0                     1/1     Running   0          2m42s
+pod/argocd-applicationset-controller-6cb467498c-q29nb   1/1     Running   0          2m42s
+pod/argocd-dex-server-6c468465db-2wdqr                  1/1     Running   0          2m42s
+pod/argocd-notifications-controller-7d799659bf-cbl4g    1/1     Running   0          2m42s
+pod/argocd-redis-67cffd569f-wsm9j                       1/1     Running   0          2m42s
+pod/argocd-repo-server-6458bd9fd6-bzkm2                 1/1     Running   0          2m42s
+pod/argocd-server-5758f69d8b-qkw94                      1/1     Running   0          2m42s
+
+NAME                                       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)             AGE
+service/argocd-applicationset-controller   ClusterIP   10.96.182.159   <none>        7000/TCP            2m42s
+service/argocd-dex-server                  ClusterIP   10.96.75.78     <none>        5556/TCP,5557/TCP   2m42s
+service/argocd-redis                       ClusterIP   10.96.227.89    <none>        6379/TCP            2m42s
+service/argocd-repo-server                 ClusterIP   10.96.237.4     <none>        8081/TCP            2m42s
+service/argocd-server                      ClusterIP   10.96.185.13    <none>        80/TCP,443/TCP      2m42s
+
+NAME                                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/argocd-applicationset-controller   1/1     1            1           2m42s
+deployment.apps/argocd-dex-server                  1/1     1            1           2m42s
+deployment.apps/argocd-notifications-controller    1/1     1            1           2m42s
+deployment.apps/argocd-redis                       1/1     1            1           2m42s
+deployment.apps/argocd-repo-server                 1/1     1            1           2m42s
+deployment.apps/argocd-server                      1/1     1            1           2m42s
+
+NAME                                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/argocd-applicationset-controller-6cb467498c   1         1         1       2m42s
+replicaset.apps/argocd-dex-server-6c468465db                  1         1         1       2m42s
+replicaset.apps/argocd-notifications-controller-7d799659bf    1         1         1       2m42s
+replicaset.apps/argocd-redis-67cffd569f                       1         1         1       2m42s
+replicaset.apps/argocd-repo-server-6458bd9fd6                 1         1         1       2m42s
+replicaset.apps/argocd-server-5758f69d8b                      1         1         1       2m42s
+
+NAME                                             READY   AGE
+statefulset.apps/argocd-application-controller   1/1     2m42s
+niran@NIRANJAN-LAP:~$
+
+
+niran@NIRANJAN-LAP:~$ kubectl get pods -n argocd
+NAME                                                READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                     1/1     Running   0          75s
+argocd-applicationset-controller-6cb467498c-q29nb   1/1     Running   0          75s
+argocd-dex-server-6c468465db-2wdqr                  1/1     Running   0          75s
+argocd-notifications-controller-7d799659bf-cbl4g    1/1     Running   0          75s
+argocd-redis-67cffd569f-wsm9j                       1/1     Running   0          75s
+argocd-repo-server-6458bd9fd6-bzkm2                 1/1     Running   0          75s
+argocd-server-5758f69d8b-qkw94                      1/1     Running   0          75s
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl get svc -n argocd
+NAME                               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)             AGE
+argocd-applicationset-controller   ClusterIP   10.96.182.159   <none>        7000/TCP            92s
+argocd-dex-server                  ClusterIP   10.96.75.78     <none>        5556/TCP,5557/TCP   92s
+argocd-redis                       ClusterIP   10.96.227.89    <none>        6379/TCP            92s
+argocd-repo-server                 ClusterIP   10.96.237.4     <none>        8081/TCP            92s
+argocd-server                      ClusterIP   10.96.185.13    <none>        80/TCP,443/TCP      92s
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$
+
+niran@NIRANJAN-LAP:~$ kubectl port-forward svc/argocd-server -n argocd 8080:443
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Handling connection for 8080
+Handling connection for 8080
+
+niran@NIRANJAN-LAP:~$ kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath="{.data.password}" | base64 -d && echo
+5uAHvPP0iGZq5gMD
+niran@NIRANJAN-LAP:~$
+
+Login with:
+
+* Username: `admin`
+* Password: (above output)
+
+=>After login, Go to setting->user info->update password->current pws->new pwd->save(niranjan@123)
+
+=>ArgoCD server runs inside Kubernetes, but to interact with it from the terminal you need the **ArgoCD CLI (`argocd`)**.  
+This is separate from the server installation.
+
+niran@NIRANJAN-LAP:~$ curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+rm argocd-linux-amd64
+[sudo] password for niran:
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ argocd version --client
+argocd: v3.4.3+1801122
+  BuildDate: 2026-05-28T12:02:57Z
+  GitCommit: 1801122b4391cad4961301f787006dc9a88c2dd3
+  GitTreeState: clean
+  GoVersion: go1.26.0
+  Compiler: gc
+  Platform: linux/amd64
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ argocd login localhost:8080 --username admin --password niranjan@123 --insecure
+'admin:login' logged in successfully
+Context 'localhost:8080' updated
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ argocd account get-user-info
+Logged In: true
+Username: admin
+Issuer: argocd
+Groups:
+niran@NIRANJAN-LAP:~$
+
+Fork and Clone this Git Repository into local system
+
+1. First Fork it into your GitHub Account:
+
+   Go to below url, and fork it:
+
+      ```bash
+      https://github.com/ChNira2024/argocd-demo
+      ```
+
+2. Then clone it, into your Local system
+
+      ```bash
+      git clone https://github.com/<your-username>/argocd-demos.git
+      ```   
+
+Replace `<your-username>` with your GitHub Username.
+
+This repo contains the manifest files that are need to apply all three approaches
+
+=>Then go to argocd login, connect with github->paste github url->select default project ->save..
+
+niran@NIRANJAN-LAP:~$ kubectl config get-contexts
+CURRENT   NAME                  CLUSTER               AUTHINFO              NAMESPACE
+          docker-desktop        docker-desktop        docker-desktop
+*         kind-argocd-cluster   kind-argocd-cluster   kind-argocd-cluster
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl config current-context
+kind-argocd-cluster
+niran@NIRANJAN-LAP:~$ kubectl get nodes
+NAME                           STATUS   ROLES           AGE   VERSION
+argocd-cluster-control-plane   Ready    control-plane   82m   v1.33.1
+argocd-cluster-worker          Ready    <none>          82m   v1.33.1
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ argocd cluster add kind-argocd-cluster --name argocd-cluster --insecure
+WARNING: This will create a service account `argocd-manager` on the cluster referenced by context `kind-argocd-cluster` with full cluster level privileges. Do you want to continue [y/N]? y
+{"level":"info","msg":"ServiceAccount \"argocd-manager\" already exists in namespace \"kube-system\"","time":"2026-06-02T07:09:05Z"}
+{"level":"info","msg":"ClusterRole \"argocd-manager-role\" updated","time":"2026-06-02T07:09:05Z"}
+{"level":"info","msg":"ClusterRoleBinding \"argocd-manager-role-binding\" updated","time":"2026-06-02T07:09:05Z"}
+{"level":"info","msg":"Using existing bearer token secret \"argocd-manager-long-lived-token\" for ServiceAccount \"argocd-manager\"","time":"2026-06-02T07:09:05Z"}
+{"level":"fatal","msg":"rpc error: code = Unknown desc = error getting server version: failed to get server version: Get \"https://127.0.0.1:38827/version?timeout=32s\": dial tcp 127.0.0.1:38827: connect: connection refused","time":"2026-06-02T07:09:05Z"}
+niran@NIRANJAN-LAP:~$
+
+=>This error is coming becoz i am using local machine to install cluster that is it is saying already you are using local kubernetes where cluster is there..
+
+niran@NIRANJAN-LAP:~$ argocd cluster list
+SERVER                          NAME        VERSION  STATUS   MESSAGE                                                  PROJECT
+https://kubernetes.default.svc  in-cluster  1.33.1   Unknown  Cluster has no applications and is not being monitored.
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl get pods
+No resources found in default namespace.
+
+=>Ok..argocd is running which is running on port 8080. To access it hit: localhost:8080
+=>Ok..let's deploy .yml file in kubernetes cluster using ArgoCD
+=>Login to ArgoCD, connect with repository i.e https://github.com/ChNira2024/argocd-project
+=>path is where .yaml file is present: /argocd-demo/ui_approach/nginx
+=>ArgoCD will apply `nginx_deployment.yml` and `nginx_svc.yml` into the `default` namespace. 
+
+=>once connect done between argocd with github then after check...
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+nginx-5644956b5f-hs65w   1/1     Running   0          2m15s
+nginx-5644956b5f-k728f   1/1     Running   0          2m15s
+nginx-5644956b5f-mfnmj   1/1     Running   0          2m15s
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl get svc
+NAME            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+kubernetes      ClusterIP   10.96.0.1       <none>        443/TCP   102m
+nginx-service   ClusterIP   10.96.213.160   <none>        80/TCP    3m27s
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl port-forward svc/nginx-service 8081:80
+Forwarding from 127.0.0.1:8081 -> 80
+Forwarding from [::1]:8081 -> 80
+Handling connection for 8081
+
+=>So nginx is running on port 8081 and test with localhost:8081
+=>see the screenshot...
+

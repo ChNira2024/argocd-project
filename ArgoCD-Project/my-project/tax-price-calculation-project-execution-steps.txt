@@ -1,0 +1,72 @@
+https://github.com/ChNira2024/docker-k8s-deployment
+microservices-tax-price-calculation/ 
+├── tax-service/ 
+│ ├── deployment.yaml 
+│ └── service.yaml 
+├── price-service/ 
+│ ├── deployment.yaml 
+│ └── service.yaml 
+├── tax-price-calculation-react/ 
+│ ├── deployment.yaml 
+│ └── service.yaml
+
+=>Deploy microservices-tax-price-calculation project in kubernetes kind cluster using ArgoCD GitOps Tool.
+
+=>Login ArgoCD with default username: admin and password niranjan@123
+=>then go to setting->Repository->Connect with Repo->select Https->select project is "default"->
+here copy your github base project url(https://github.com/ChNira2024/docker-k8s-deployment) ->then click connection
+
+=>Then comes to application to create service ->click NEW APP ->enter any project name "tax-service"
+=>Then select project name is "default" ->then check box auto-create namespace->then paste github repo(https://github.com/ChNira2024/docker-k8s-deployment)
+->then paste the path means where actually .yml file is present...(microservices-tax-price-calculation/tax-service)->then select the branch(main)
+->then select default namespace->then select cluster url(https://kubernetes.default.svc) this is default one->then create...
+
+NOTE: Like this i create 2 more service i.e price-service,tax-price-calculation becoz my project structure is like that...but in real-time not
+
+niran@NIRANJAN-LAP:~$ kubectl get pods
+NAME                                        READY   STATUS    RESTARTS   AGE
+frontend-deployment-766b58d585-ztcvf        1/1     Running   0          16s
+nginx-5644956b5f-hs65w                      1/1     Running   0          78m
+nginx-5644956b5f-k728f                      1/1     Running   0          78m
+nginx-5644956b5f-mfnmj                      1/1     Running   0          78m
+price-service-deployment-7bdffd44cb-zkr4v   1/1     Running   0          24s
+tax-service-deployment-6c55679768-tztml     1/1     Running   0          34s
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl get svc
+NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+frontend-service   NodePort    10.96.36.233    <none>        80:30000/TCP     29s
+kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP          177m
+nginx-service      ClusterIP   10.96.213.160   <none>        80/TCP           78m
+price-service      NodePort    10.96.147.3     <none>        3000:31000/TCP   37s
+tax-service        ClusterIP   10.96.173.142   <none>        4000/TCP         47s
+niran@NIRANJAN-LAP:~$
+
+=>react running on port...
+niran@NIRANJAN-LAP:~$ kubectl port-forward svc/frontend-service 30000:80
+Forwarding from 127.0.0.1:30000 -> 80
+Forwarding from [::1]:30000 -> 80
+Handling connection for 30000
+Handling connection for 30000
+
+=>tax-service running on port...
+niran@NIRANJAN-LAP:~$ kubectl port-forward svc/tax-service 32000:4000
+Forwarding from 127.0.0.1:32000 -> 4000
+Forwarding from [::1]:32000 -> 4000
+
+=>price-service running on port...
+niran@NIRANJAN-LAP:~$ kubectl port-forward svc/price-service 31000:3000
+Forwarding from 127.0.0.1:31000 -> 3000
+Forwarding from [::1]:31000 -> 3000
+
+=>Then delete everything...
+niran@NIRANJAN-LAP:~$ kubectl delete svc frontend-service
+kubectl delete svc price-service
+kubectl delete svc tax-service
+service "frontend-service" deleted from default namespace
+service "price-service" deleted from default namespace
+service "tax-service" deleted from default namespace
+niran@NIRANJAN-LAP:~$
+niran@NIRANJAN-LAP:~$ kubectl get svc
+NAME            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+kubernetes      ClusterIP   10.96.0.1       <none>        443/TCP   3h22m
+niran@NIRANJAN-LAP:~$
